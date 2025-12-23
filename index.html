@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>မြန်မာ့မိုးလေဝသ</title>
+    
+    <!-- Tailwind CSS (အင်တာနက်ချိတ်ထားရန်လိုသည်) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts (Padauk for Burmese) -->
+    <link href="https://fonts.googleapis.com/css2?family=Padauk:wght@400;700&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'Padauk', 'sans-serif'],
+                        burmese: ['Padauk', 'sans-serif'],
+                    },
+                    colors: {
+                        glass: 'rgba(255, 255, 255, 0.1)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* CSS Styles */
+        body {
+            transition: background 0.5s ease;
+        }
+        
+        /* Glassmorphism Effect */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .dark .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Background Gradients */
+        .bg-day {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        }
+        .bg-night {
+            background: linear-gradient(135deg, #0f172a 0%, #334155 100%);
+        }
+        .bg-evening {
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top: 3px solid #fff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Icon Animation */
+        .floating-icon { animation: float 3s ease-in-out infinite; }
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        /* Hide Scrollbar */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-day min-h-screen text-white font-burmese antialiased">
+
+    <!-- Header / Navbar -->
+    <nav class="p-4 flex justify-between items-center max-w-5xl mx-auto">
+        <div class="flex items-center gap-2">
+            <i class="fa-solid fa-cloud-sun text-2xl text-yellow-300"></i>
+            <h1 class="text-xl font-bold">မြန်မာ့မိုးလေဝသ</h1>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="toggleTheme()" class="p-2 rounded-full glass-panel hover:bg-white/20 transition">
+                <i id="theme-icon" class="fa-solid fa-moon"></i>
+            </button>
+            <button onclick="getLocation()" class="p-2 rounded-full glass-panel hover:bg-white/20 transition" title="လက်ရှိနေရာ">
+                <i class="fa-solid fa-location-crosshairs"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Container -->
+    <main class="max-w-5xl mx-auto p-4 pb-20 space-y-6">
+
+        <!-- Search Bar -->
+        <div class="relative w-full max-w-md mx-auto">
+            <div class="flex items-center glass-panel rounded-full px-4 py-2">
+                <i class="fa-solid fa-magnifying-glass text-gray-200 ml-2"></i>
+                <input type="text" id="city-input" placeholder="မြို့အမည် ရိုက်ထည့်ပါ (ဥပမာ - Yangon)" 
+                    class="w-full bg-transparent border-none focus:ring-0 text-white placeholder-gray-200 px-3 py-1 outline-none">
+                <button onclick="searchCity()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-1 rounded-full text-sm transition">
+                    ရှာမယ်
+                </button>
+            </div>
+            <!-- Popular Cities -->
+            <div class="flex gap-2 mt-3 justify-center flex-wrap">
+                <button onclick="fetchData('Yangon')" class="text-xs glass-panel px-3 py-1 rounded-full hover:bg-white/20">ရန်ကုန်</button>
+                <button onclick="fetchData('Mandalay')" class="text-xs glass-panel px-3 py-1 rounded-full hover:bg-white/20">မန္တလေး</button>
+                <button onclick="fetchData('Naypyitaw')" class="text-xs glass-panel px-3 py-1 rounded-full hover:bg-white/20">နေပြည်တော်</button>
+                <button onclick="fetchData('Taunggyi')" class="text-xs glass-panel px-3 py-1 rounded-full hover:bg-white/20">တောင်ကြီး</button>
+            </div>
+        </div>
+
+        <!-- Loading & Error -->
+        <div id="loader" class="hidden flex justify-center py-10"><div class="loader"></div></div>
+        <div id="error-msg" class="hidden text-center bg-red-500/80 p-2 rounded-lg text-sm"></div>
+
+        <!-- Dashboard Content -->
+        <div id="dashboard" class="hidden grid grid-cols-1 md:grid-cols-12 gap-6 animate-[fadeIn_0.5s_ease-out]">
+            
+            <!-- Left Column: Current Weather (5 cols) -->
+            <div class="md:col-span-5 space-y-6">
+                <!-- Main Weather Card -->
+                <div class="glass-panel rounded-3xl p-6 relative overflow-hidden">
+                    <div class="flex justify-between items-start z-10 relative">
+                        <div>
+                            <h2 id="city-name" class="text-3xl font-bold tracking-wide">-</h2>
+                            <p id="date-display" class="text-sm opacity-80 mt-1">-</p>
+                        </div>
+                        <span id="weather-badge" class="px-3 py-1 rounded-full bg-yellow-400/30 text-yellow-200 text-xs font-bold border border-yellow-400/40">
+                            -
+                        </span>
+                    </div>
+
+                    <div class="flex items-center mt-6 z-10 relative">
+                        <img id="weather-icon" src="" class="w-24 h-24 floating-icon object-contain" alt="icon">
+                        <div class="ml-2">
+                            <h1 class="text-6xl font-bold"><span id="temp-val">0</span>°</h1>
+                            <p id="weather-desc" class="text-lg opacity-90 capitalize">-</p>
+                        </div>
+                    </div>
+
+                    <!-- Details Grid -->
+                    <div class="grid grid-cols-3 gap-2 mt-8 text-center z-10 relative">
+                        <div class="bg-white/10 rounded-xl p-2">
+                            <i class="fa-solid fa-wind mb-1 text-blue-200"></i>
+                            <p class="text-[10px] opacity-70">လေတိုက်နှုန်း</p>
+                            <p class="font-semibold text-sm"><span id="wind">0</span> km/h</p>
+                        </div>
+                        <div class="bg-white/10 rounded-xl p-2">
+                            <i class="fa-solid fa-droplet mb-1 text-blue-200"></i>
+                            <p class="text-[10px] opacity-70">စိုထိုင်းဆ</p>
+                            <p class="font-semibold text-sm"><span id="humidity">0</span>%</p>
+                        </div>
+                        <div class="bg-white/10 rounded-xl p-2">
+                            <i class="fa-solid fa-eye mb-1 text-blue-200"></i>
+                            <p class="text-[10px] opacity-70">မြင်ကွင်း</p>
+                            <p class="font-semibold text-sm"><span id="visibility">0</span> km</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AQI Card -->
+                <div class="glass-panel rounded-3xl p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-semibold text-lg flex items-center gap-2">
+                            <i class="fa-solid fa-lungs text-green-300"></i> လေထုအရည်အသွေး
+                        </h3>
+                        <span id="aqi-badge" class="px-3 py-1 rounded-full bg-green-500 text-xs font-bold">Good</span>
+                    </div>
+                    <div class="flex items-end gap-2 mb-3">
+                        <span class="text-4xl font-bold" id="aqi-val">-</span>
+                        <span class="text-sm opacity-70 mb-1">AQI Score</span>
+                    </div>
+                    <div class="flex gap-4 mb-4 text-sm">
+                        <div><p class="opacity-60 text-xs">PM2.5</p><p class="font-medium" id="pm25">-</p></div>
+                        <div><p class="opacity-60 text-xs">PM10</p><p class="font-medium" id="pm10">-</p></div>
+                    </div>
+                    <div class="bg-white/10 rounded-xl p-3 border-l-4 border-green-400" id="health-box">
+                        <p class="text-xs opacity-90 leading-relaxed" id="health-tip">Loading health tips...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Forecast (7 cols) -->
+            <div class="md:col-span-7 space-y-6">
+                <!-- Hourly -->
+                <div class="glass-panel rounded-3xl p-6">
+                    <h3 class="font-semibold text-lg mb-4 opacity-90"><i class="fa-regular fa-clock mr-2"></i>တစ်နေ့တာ အခြေအနေ</h3>
+                    <div class="flex overflow-x-auto gap-4 pb-2 no-scrollbar" id="hourly-list">
+                        <!-- JS Injected -->
+                    </div>
+                </div>
+
+                <!-- 7 Day -->
+                <div class="glass-panel rounded-3xl p-6">
+                    <h3 class="font-semibold text-lg mb-4 opacity-90"><i class="fa-regular fa-calendar-days mr-2"></i>၇ ရက်စာ ခန့်မှန်းချက်</h3>
+                    <div class="space-y-3" id="daily-list">
+                        <!-- JS Injected -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- CONFIGURATION ---
+        const API_KEY = "ec7e7f3534f04172d0f951e6d3915a69"; // Your provided Key
+        
+        // DOM Elements
+        const els = {
+            input: document.getElementById('city-input'),
+            dash: document.getElementById('dashboard'),
+            loader: document.getElementById('loader'),
+            error: document.getElementById('error-msg'),
+            // UI
+            city: document.getElementById('city-name'),
+            date: document.getElementById('date-display'),
+            temp: document.getElementById('temp-val'),
+            desc: document.getElementById('weather-desc'),
+            icon: document.getElementById('weather-icon'),
+            badge: document.getElementById('weather-badge'),
+            wind: document.getElementById('wind'),
+            hum: document.getElementById('humidity'),
+            vis: document.getElementById('visibility'),
+            // AQI
+            aqiVal: document.getElementById('aqi-val'),
+            aqiBadge: document.getElementById('aqi-badge'),
+            pm25: document.getElementById('pm25'),
+            pm10: document.getElementById('pm10'),
+            tip: document.getElementById('health-tip'),
+            healthBox: document.getElementById('health-box'),
+            // Lists
+            hourly: document.getElementById('hourly-list'),
+            daily: document.getElementById('daily-list')
+        };
+
+        // --- INIT ---
+        window.addEventListener('load', () => {
+            fetchData('Yangon'); // Default city
+            updateDate();
+        });
+
+        function updateDate() {
+            const now = new Date();
+            const options = { weekday: 'long', day: 'numeric', month: 'long' };
+            els.date.innerText = now.toLocaleDateString('en-US', options); // Or 'my-MM' if browser supports
+        }
+
+        // --- SEARCH & LOCATION ---
+        function searchCity() {
+            const city = els.input.value.trim();
+            if(city) fetchData(city);
+        }
+
+        els.input.addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') searchCity();
+        });
+
+        function getLocation() {
+            if (navigator.geolocation) {
+                showLoading(true);
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => fetchByCoords(pos.coords.latitude, pos.coords.longitude),
+                    (err) => showError("Location access denied.")
+                );
+            } else {
+                showError("Geolocation not supported.");
+            }
+        }
+
+        // --- API FETCHING ---
+        async function fetchData(city) {
+            showLoading(true);
+            try {
+                // 1. Geo Code
+                const geoRes = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${city},MM&limit=1&appid=${API_KEY}`);
+                const geoData = await geoRes.json();
+                if (!geoData.length) throw new Error("မြို့အမည် မမှန်ကန်ပါ (City not found)");
+                
+                const { lat, lon, name } = geoData[0];
+                await fetchByCoords(lat, lon, name);
+            } catch (err) {
+                showError(err.message || "Connection Failed");
+            }
+        }
+
+        async function fetchByCoords(lat, lon, nameOverride = null) {
+            try {
+                // Parallel Fetch
+                const [weatherRes, forecastRes, aqiRes] = await Promise.all([
+                    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`),
+                    fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`),
+                    fetch(`https://api.openweathermap.org/data/2.5/air_pollution?lat=${lat}&lon=${lon}&appid=${API_KEY}`)
+                ]);
+
+                if(!weatherRes.ok) throw new Error("Weather API Error");
+
+                const weather = await weatherRes.json();
+                const forecast = await forecastRes.json();
+                const aqi = await aqiRes.json();
+
+                renderUI(weather, forecast, aqi, nameOverride);
+            } catch (err) {
+                showError("ဒေတာ ရယူ၍ မရပါ။ အင်တာနက် စစ်ဆေးပါ။");
+                console.error(err);
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        // --- RENDER UI ---
+        function renderUI(weather, forecast, aqi, nameOverride) {
+            els.error.classList.add('hidden');
+            els.dash.classList.remove('hidden');
+
+            // Current Weather
+            els.city.innerText = nameOverride || weather.name;
+            els.temp.innerText = Math.round(weather.main.temp);
+            els.desc.innerText = weather.weather[0].description; // English desc from API
+            els.wind.innerText = Math.round(weather.wind.speed);
+            els.hum.innerText = weather.main.humidity;
+            els.vis.innerText = (weather.visibility / 1000).toFixed(1);
+            
+            const iconCode = weather.weather[0].icon;
+            els.icon.src = `https://openweathermap.org/img/wn/${iconCode}@4x.png`;
+            els.badge.innerText = weather.weather[0].main;
+
+            // Background Change based on icon (d=day, n=night)
+            document.body.className = iconCode.includes('n') ? 'bg-night text-white font-burmese' : 'bg-day text-white font-burmese';
+
+            // AQI (Mapping 1-5 to US AQI approx)
+            const rawAqi = aqi.list[0].main.aqi;
+            const pm25Val = aqi.list[0].components.pm2_5;
+            const pm10Val = aqi.list[0].components.pm10;
+            
+            // Map 1-5 to AQI Score Visuals
+            const aqiMap = {
+                1: { score: 30, text: "ကောင်းမွန်သည် (Good)", color: "bg-green-500", tip: "လေထုသန့်ရှင်းပါသည်။ အပြင်ထွက်လည်ပတ်ရန် ကောင်းမွန်သည်။" },
+                2: { score: 70, text: "သင့်တင့်သည် (Fair)", color: "bg-yellow-500", tip: "သာမန်လူများအတွက် အဆင်ပြေသည်။" },
+                3: { score: 120, text: "လူတချို့သတိပြုရန် (Moderate)", color: "bg-orange-500", tip: "ကလေးများနှင့် သက်ကြီးရွယ်အိုများ အပြင်ထွက်ခြင်း လျှော့သင့်သည်။" },
+                4: { score: 170, text: "ကျန်းမာရေး ထိခိုက်နိုင် (Poor)", color: "bg-red-500", tip: "အပြင်ထွက်ခြင်း ရှောင်ကြဉ်ပါ။ Mask တပ်ဆင်ပါ။" },
+                5: { score: 250, text: "အလွန်ဆိုးရွားသည် (Very Poor)", color: "bg-purple-600", tip: "ကျန်းမာရေး အထူးဂရုပြုပါ။ အိမ်ထဲမှာသာ နေထိုင်ပါ။" }
+            };
+
+            const status = aqiMap[rawAqi];
+            els.aqiVal.innerText = status.score;
+            els.aqiBadge.innerText = status.text;
+            els.aqiBadge.className = `px-3 py-1 rounded-full text-white text-xs font-bold ${status.color}`;
+            els.pm25.innerText = pm25Val;
+            els.pm10.innerText = pm10Val;
+            els.tip.innerText = status.tip;
+            els.healthBox.className = `glass-panel rounded-xl p-3 border-l-4 ${status.color.replace('bg-', 'border-')}`;
+
+            // Hourly Forecast (Next 24h - take 8 items)
+            els.hourly.innerHTML = '';
+            forecast.list.slice(0, 8).forEach(item => {
+                const time = new Date(item.dt * 1000).toLocaleTimeString([], {hour: '2-digit', hour12: true});
+                const div = document.createElement('div');
+                div.className = 'flex flex-col items-center min-w-[70px] p-2 rounded-xl bg-white/10';
+                div.innerHTML = `
+                    <span class="text-xs opacity-80 mb-1">${time}</span>
+                    <img src="https://openweathermap.org/img/wn/${item.weather[0].icon}.png" class="w-8 h-8">
+                    <span class="font-bold text-sm mt-1">${Math.round(item.main.temp)}°</span>
+                `;
+                els.hourly.appendChild(div);
+            });
+
+            // Daily Forecast (Filter for 12:00 PM)
+            els.daily.innerHTML = '';
+            const dailyData = forecast.list.filter(item => item.dt_txt.includes("12:00:00"));
+            dailyData.forEach(item => {
+                const date = new Date(item.dt * 1000).toLocaleDateString('en-US', {weekday: 'long'});
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition';
+                div.innerHTML = `
+                    <span class="w-1/3 font-medium text-sm">${date}</span>
+                    <div class="flex items-center justify-center w-1/3">
+                        <img src="https://openweathermap.org/img/wn/${item.weather[0].icon}.png" class="w-8 h-8 mr-1">
+                        <span class="text-xs opacity-70 mobile-hide">${item.weather[0].main}</span>
+                    </div>
+                    <span class="w-1/3 text-right font-bold text-sm">${Math.round(item.main.temp)}° / ${Math.round(item.main.humidity)}%</span>
+                `;
+                els.daily.appendChild(div);
+            });
+        }
+
+        // --- UTILS ---
+        function showLoading(bool) {
+            if(bool) {
+                els.loader.classList.remove('hidden');
+                els.dash.classList.add('hidden');
+                els.error.classList.add('hidden');
+            } else {
+                els.loader.classList.add('hidden');
+            }
+        }
+
+        function showError(msg) {
+            els.loader.classList.add('hidden');
+            els.error.innerText = msg;
+            els.error.classList.remove('hidden');
+        }
+
+        function toggleTheme() {
+            document.body.classList.toggle('dark');
+            const icon = document.getElementById('theme-icon');
+            if(document.body.classList.contains('dark')) {
+                document.body.classList.remove('bg-day');
+                document.body.classList.add('bg-night');
+                icon.className = 'fa-solid fa-sun';
+            } else {
+                document.body.classList.remove('bg-night');
+                document.body.classList.add('bg-day');
+                icon.className = 'fa-solid fa-moon';
+            }
+        }
+    </script>
+</body>
+</html>
