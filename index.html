@@ -85,9 +85,17 @@
         /* Hide Scrollbar */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* Custom style for Ad Container */
+        .ad-container {
+            max-width: 100%;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+        }
     </style>
 </head>
-<body class="bg-day min-h-screen text-white font-burmese antialiased">
+<body class="bg-day min-h-screen text-white font-burmese antialiased pb-32">
 
     <!-- Header / Navbar -->
     <nav class="p-4 flex justify-between items-center max-w-5xl mx-auto">
@@ -106,7 +114,7 @@
     </nav>
 
     <!-- Main Container -->
-    <main class="max-w-5xl mx-auto p-4 pb-20 space-y-6">
+    <main class="max-w-5xl mx-auto p-4 space-y-6">
 
         <!-- Search Bar -->
         <div class="relative w-full max-w-md mx-auto">
@@ -134,7 +142,7 @@
         <!-- Dashboard Content -->
         <div id="dashboard" class="hidden grid grid-cols-1 md:grid-cols-12 gap-6 animate-[fadeIn_0.5s_ease-out]">
             
-            <!-- Left Column: Current Weather (5 cols) -->
+            <!-- Left Column: Current Weather & AQI (5 cols) -->
             <div class="md:col-span-5 space-y-6">
                 <!-- Main Weather Card -->
                 <div class="glass-panel rounded-3xl p-6 relative overflow-hidden">
@@ -151,7 +159,7 @@
                     <div class="flex items-center mt-6 z-10 relative">
                         <img id="weather-icon" src="" class="w-24 h-24 floating-icon object-contain" alt="icon">
                         <div class="ml-2">
-                            <h1 class="text-6xl font-bold"><span id="temp-val">0</span>°</h1>
+                            <h1 class="text-6xl font-bold"><span id="temp-val">0</span></h1>
                             <p id="weather-desc" class="text-lg opacity-90 capitalize">-</p>
                         </div>
                     </div>
@@ -196,6 +204,14 @@
                         <p class="text-xs opacity-90 leading-relaxed" id="health-tip">Loading health tips...</p>
                     </div>
                 </div>
+
+                <!-- Place 1: Native Banner Card (AQI Card အောက်ခြေ) -->
+                <div class="glass-panel rounded-3xl p-4 overflow-hidden ad-container">
+                    <!-- ADSTERRA NATIVE BANNER -->
+                    <script async="async" data-cfasync="false" src="https://pl29888803.effectivecpmnetwork.com/0c063eff58fa218f3ebdbb58cd15642a/invoke.js"></script>
+                    <div id="container-0c063eff58fa218f3ebdbb58cd15642a"></div>
+                </div>
+
             </div>
 
             <!-- Right Column: Forecast (7 cols) -->
@@ -219,10 +235,40 @@
         </div>
     </main>
 
+    <!-- Place 2: Sticky Bottom Banner (Screen အောက်ခြေတွင် ကပ်နေမည်) -->
+    <div class="fixed bottom-0 left-0 w-full z-50 bg-black/10 backdrop-blur-md border-t border-white/10 py-1 flex justify-center items-center">
+        <!-- Desktop: 728x90 -->
+        <div class="hidden md:block">
+            <script type="text/javascript">
+                atOptions = {
+                    'key' : '3de6b51aa4b2cca46d2311446cd83a87',
+                    'format' : 'iframe',
+                    'height' : 90,
+                    'width' : 728,
+                    'params' : {}
+                };
+            </script>
+            <script type="text/javascript" src="https://www.highperformanceformat.com/3de6b51aa4b2cca46d2311446cd83a87/invoke.js"></script>
+        </div>
+        <!-- Mobile: 320x50 -->
+        <div class="md:hidden">
+            <script type="text/javascript">
+                atOptions = {
+                    'key' : '032ca0de9d83553d437142927e41d49b',
+                    'format' : 'iframe',
+                    'height' : 50,
+                    'width' : 320,
+                    'params' : {}
+                };
+            </script>
+            <script type="text/javascript" src="https://www.highperformanceformat.com/032ca0de9d83553d437142927e41d49b/invoke.js"></script>
+        </div>
+    </div>
+
     <!-- JavaScript Logic -->
     <script>
         // --- CONFIGURATION ---
-        const API_KEY = "ec7e7f3534f04172d0f951e6d3915a69"; // Your provided Key
+        const API_KEY = "ec7e7f3534f04172d0f951e6d3915a69"; 
         
         // DOM Elements
         const els = {
@@ -230,7 +276,6 @@
             dash: document.getElementById('dashboard'),
             loader: document.getElementById('loader'),
             error: document.getElementById('error-msg'),
-            // UI
             city: document.getElementById('city-name'),
             date: document.getElementById('date-display'),
             temp: document.getElementById('temp-val'),
@@ -240,31 +285,27 @@
             wind: document.getElementById('wind'),
             hum: document.getElementById('humidity'),
             vis: document.getElementById('visibility'),
-            // AQI
             aqiVal: document.getElementById('aqi-val'),
             aqiBadge: document.getElementById('aqi-badge'),
             pm25: document.getElementById('pm25'),
             pm10: document.getElementById('pm10'),
             tip: document.getElementById('health-tip'),
             healthBox: document.getElementById('health-box'),
-            // Lists
             hourly: document.getElementById('hourly-list'),
             daily: document.getElementById('daily-list')
         };
 
-        // --- INIT ---
         window.addEventListener('load', () => {
-            fetchData('Yangon'); // Default city
+            fetchData('Yangon'); 
             updateDate();
         });
 
         function updateDate() {
             const now = new Date();
             const options = { weekday: 'long', day: 'numeric', month: 'long' };
-            els.date.innerText = now.toLocaleDateString('en-US', options); // Or 'my-MM' if browser supports
+            els.date.innerText = now.toLocaleDateString('en-US', options);
         }
 
-        // --- SEARCH & LOCATION ---
         function searchCity() {
             const city = els.input.value.trim();
             if(city) fetchData(city);
@@ -286,11 +327,9 @@
             }
         }
 
-        // --- API FETCHING ---
         async function fetchData(city) {
             showLoading(true);
             try {
-                // 1. Geo Code
                 const geoRes = await fetch(`https://api.openweathermap.org/geo/1.0/direct?q=${city},MM&limit=1&appid=${API_KEY}`);
                 const geoData = await geoRes.json();
                 if (!geoData.length) throw new Error("မြို့အမည် မမှန်ကန်ပါ (City not found)");
@@ -304,7 +343,6 @@
 
         async function fetchByCoords(lat, lon, nameOverride = null) {
             try {
-                // Parallel Fetch
                 const [weatherRes, forecastRes, aqiRes] = await Promise.all([
                     fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`),
                     fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${API_KEY}`),
@@ -326,15 +364,13 @@
             }
         }
 
-        // --- RENDER UI ---
         function renderUI(weather, forecast, aqi, nameOverride) {
             els.error.classList.add('hidden');
             els.dash.classList.remove('hidden');
 
-            // Current Weather
             els.city.innerText = nameOverride || weather.name;
             els.temp.innerText = Math.round(weather.main.temp);
-            els.desc.innerText = weather.weather[0].description; // English desc from API
+            els.desc.innerText = weather.weather[0].description; 
             els.wind.innerText = Math.round(weather.wind.speed);
             els.hum.innerText = weather.main.humidity;
             els.vis.innerText = (weather.visibility / 1000).toFixed(1);
@@ -343,15 +379,12 @@
             els.icon.src = `https://openweathermap.org/img/wn/${iconCode}@4x.png`;
             els.badge.innerText = weather.weather[0].main;
 
-            // Background Change based on icon (d=day, n=night)
-            document.body.className = iconCode.includes('n') ? 'bg-night text-white font-burmese' : 'bg-day text-white font-burmese';
+            document.body.className = iconCode.includes('n') ? 'bg-night text-white font-burmese pb-32' : 'bg-day text-white font-burmese pb-32';
 
-            // AQI (Mapping 1-5 to US AQI approx)
             const rawAqi = aqi.list[0].main.aqi;
             const pm25Val = aqi.list[0].components.pm2_5;
             const pm10Val = aqi.list[0].components.pm10;
             
-            // Map 1-5 to AQI Score Visuals
             const aqiMap = {
                 1: { score: 30, text: "ကောင်းမွန်သည် (Good)", color: "bg-green-500", tip: "လေထုသန့်ရှင်းပါသည်။ အပြင်ထွက်လည်ပတ်ရန် ကောင်းမွန်သည်။" },
                 2: { score: 70, text: "သင့်တင့်သည် (Fair)", color: "bg-yellow-500", tip: "သာမန်လူများအတွက် အဆင်ပြေသည်။" },
@@ -369,7 +402,6 @@
             els.tip.innerText = status.tip;
             els.healthBox.className = `glass-panel rounded-xl p-3 border-l-4 ${status.color.replace('bg-', 'border-')}`;
 
-            // Hourly Forecast (Next 24h - take 8 items)
             els.hourly.innerHTML = '';
             forecast.list.slice(0, 8).forEach(item => {
                 const time = new Date(item.dt * 1000).toLocaleTimeString([], {hour: '2-digit', hour12: true});
@@ -378,12 +410,11 @@
                 div.innerHTML = `
                     <span class="text-xs opacity-80 mb-1">${time}</span>
                     <img src="https://openweathermap.org/img/wn/${item.weather[0].icon}.png" class="w-8 h-8">
-                    <span class="font-bold text-sm mt-1">${Math.round(item.main.temp)}°</span>
+                    <span class="font-bold text-sm mt-1">${Math.round(item.main.temp)}</span>
                 `;
                 els.hourly.appendChild(div);
             });
 
-            // Daily Forecast (Filter for 12:00 PM)
             els.daily.innerHTML = '';
             const dailyData = forecast.list.filter(item => item.dt_txt.includes("12:00:00"));
             dailyData.forEach(item => {
@@ -396,13 +427,12 @@
                         <img src="https://openweathermap.org/img/wn/${item.weather[0].icon}.png" class="w-8 h-8 mr-1">
                         <span class="text-xs opacity-70 mobile-hide">${item.weather[0].main}</span>
                     </div>
-                    <span class="w-1/3 text-right font-bold text-sm">${Math.round(item.main.temp)}° / ${Math.round(item.main.humidity)}%</span>
+                    <span class="w-1/3 text-right font-bold text-sm">${Math.round(item.main.temp)} / ${Math.round(item.main.humidity)}%</span>
                 `;
                 els.daily.appendChild(div);
             });
         }
 
-        // --- UTILS ---
         function showLoading(bool) {
             if(bool) {
                 els.loader.classList.remove('hidden');
@@ -433,5 +463,9 @@
             }
         }
     </script>
+
+    <!-- ADSTERRA SOCIAL BAR -->
+    <script type='text/javascript' src='https://pl29888802.effectivecpmnetwork.com/ca/6c/cf/ca6ccf12b35134648af23b869132e158.js'></script>
+
 </body>
 </html>
